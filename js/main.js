@@ -6,126 +6,26 @@ const title = document.querySelector('.main__title');
 
 
 const getData = () => {
-  const dataBase = [
-    {
-      'id': '01',
-      theme: 'Тема01',
-      result: [
-        [40, 'есть задатки, нужно развиваться'],
-        [80, 'хорошо, но есть пробелы'],
-        [100, 'отлично']
-      ],
-      list: [
+  return fetch('db/quiz_db.json').then(res => res.json());
+};
 
-        {
-          type: 'checkbox',
-          question: 'Вопрос1',
-          answers: ['правильный', 'правильный1', 'неправильный', 'неправильный2'],
-          correct: 1,
-        },
-        {
-          type: 'radio',
-          question: 'Вопрос',
-          answers: ['правильный', 'неправильный1', 'неправильный', 'неправильный2'],
+const showElem = elem => {
+  let opacity = 0;
+  elem.opacity = opacity;
+  elem.style.display = '';
 
-        },
-        {
-          type: 'checkbox',
-          question: 'Вопрос',
-          answers: ['правильный', 'правильный1', 'неправильный', 'неправильный2'],
-          correct: 2,
-        },
-        {
-          type: 'checkbox',
-          question: 'Вопрос',
-          answers: ['правильный', 'правильный1', 'неправильный', 'неправильный2'],
-          correct: 2,
-        },
-        {
-          type: 'checkbox',
-          question: 'Вопрос',
-          answers: ['правильный', 'правильный1', 'неправильный', 'неправильный2'],
-          correct: 3,
-        },
-        {
-          type: 'radio',
-          question: 'Вопрос',
-          answers: ['правильный', 'неправильный1', 'неправильный', 'неправильный2'],
+  const animation = () => {
+    opacity += 0.05;
+    elem.style.opacity = opacity;
 
-        },
-        {
-          type: 'checkbox',
-          question: 'Вопрос',
-          answers: ['правильный', 'правильный1', 'неправильный', 'неправильный2'],
-          correct: 2,
-        }
-      ]
-    },
-    {
-      'id': '02',
-      theme: 'Тема02',
-      result: [
-        [30, 'есть задатки, нужно развиваться'],
-        [70, 'хорошо, но есть пробелы'],
-        [100, 'отлично']
-      ],
-      list: [
-        {
-          type: 'radio',
-          question: 'Вопрос',
-          answers: ['правильный', 'неправильный1', 'неправильный', 'неправильный2'],
-
-        },
-        {
-          type: 'checkbox',
-          question: 'Вопрос',
-          answers: ['правильный', 'правильный1', 'неправильный', 'неправильный2'],
-          correct: 1,
-        },
-        {
-          type: 'radio',
-          question: 'Вопрос',
-          answers: ['правильный', 'неправильный1', 'неправильный', 'неправильный2'],
-
-        },
-        {
-          type: 'checkbox',
-          question: 'Вопрос',
-          answers: ['правильный', 'правильный1', 'неправильный', 'неправильный2'],
-          correct: 2,
-        },
-        {
-          type: 'checkbox',
-          question: 'Вопрос',
-          answers: ['правильный', 'правильный1', 'неправильный', 'неправильный2'],
-          correct: 2,
-        },
-        {
-          type: 'checkbox',
-          question: 'Вопрос',
-          answers: ['правильный', 'правильный1', 'неправильный', 'неправильный2'],
-          correct: 3,
-        },
-        {
-          type: 'radio',
-          question: 'Вопрос',
-          answers: ['правильный', 'неправильный1', 'неправильный', 'неправильный2'],
-
-        },
-        {
-          type: 'checkbox',
-          question: 'Вопрос',
-          answers: ['правильный', 'правильный1', 'неправильный', 'неправильный2'],
-          correct: 2,
-        }
-      ]
+    if (opacity < 1) {
+      requestAnimationFrame(animation);
     }
-  ];
-
-  return dataBase;
+  }
+  requestAnimationFrame(animation)
 }
 
-const hideElem = (elem) => {
+const hideElem = (elem, cb) => {
   let opacity = getComputedStyle(elem).getPropertyValue('opacity');
 
   const animation = () => {
@@ -136,11 +36,15 @@ const hideElem = (elem) => {
       requestAnimationFrame(animation)
     } else {
       elem.style.display = 'none';
+      if (cb) cb();
     }
   };
 
   requestAnimationFrame(animation);
 };
+
+const loadResult = id => localStorage.getItem(id);
+
 
 const renderTheme = (themes) => {
   const list = document.querySelector('.selection__list');
@@ -157,7 +61,21 @@ const renderTheme = (themes) => {
     button.dataset.id = themes[i].id;
     button.textContent = themes[i].theme;
 
+    const result = loadResult(themes[i].id);
+
     li.append(button);
+    if (result) {
+      const p = document.createElement('p');
+      p.className = 'selection__result';
+      p.innerHTML = `
+    <span class="selection__result-ratio">${result}/${themes[i].list.length}</span>
+    <span class="selection__result-text">Последний результат</span>
+    `;
+      li.append(p)
+    }
+
+
+
     list.append(li);
 
     buttons.push(button);
@@ -174,11 +92,34 @@ const renderTheme = (themes) => {
   return buttons;
 };
 
+const shuffle = (array) => {
+  const newArray = [...array];
+  for (let i = newArray.length - 1; i > 0; i -= 1) {
+    let j = Math.floor(Math.random() * (i + 1));
+    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+  }
+  return newArray;
+}
+
+const createKeyAnswers = (data) => {
+  const keys = [];
+
+  for (let i = 0; i < data.answers.length; i++) {
+    if (data.type === 'radio') {
+      keys.push([data.answers[i], !i]);
+    } else {
+      keys.push([data.answers[i], i < data.correct]);
+    }
+  }
+
+  return shuffle(keys);
+}
+
 const createAnswer = (data) => {
   const type = data.type;
+  const answers = createKeyAnswers(data);
 
-
-  return data.answers.map(item => {
+  const labels = answers.map((item, i) => {
     const label = document.createElement('label');
     label.className = 'answer';
 
@@ -186,13 +127,67 @@ const createAnswer = (data) => {
     input.type = type;
     input.name = 'answer';
     input.className = `answer__${type}`;
-    console.log(input.className);
-    const text = document.createTextNode(item);
+    input.value = i;
+
+    const text = document.createTextNode(item[0]);
 
     label.append(input, text);
 
     return label;
+  });
+  const keys = answers.map(answer => answer[1]);
+
+  return {
+    labels, keys
+  }
+};
+
+const showResult = (result, quiz) => {
+
+  const block = document.createElement('div');
+  block.className = 'main__box main__box__result result';
+
+  const percent = result / quiz.list.length * 100;
+  let ratio = 0;
+
+
+  for (let i = 0; i < quiz.result.length; i++) {
+    if (percent >= quiz.result[i][0]) {
+      ratio = i;
+
+    }
+  }
+
+  block.innerHTML = `
+  <h2 class="main__subtitle main__subtitle-result">Ваш результат</h2>
+  <div class="result__box">
+    <p class="result__ratio result__ratio_${ratio + 1}">${result}/${quiz.list.length}</p>
+    <p class="result__text ">${quiz.result[ratio][1]}</p>
+  </div>
+  
+  `;
+  const button = document.createElement('button');
+  button.className = 'main__btn result__return';
+  button.textContent = 'К списку квизов';
+
+  block.append(button);
+  main.append(block);
+
+  button.addEventListener('click', () => {
+    // //location.reload();///перегрузит страницу
+
+    hideElem(block, ()=> {
+      showElem(title);
+      showElem(selection);
+      console.log('kjh');
+    })
   })
+
+
+};
+
+const saveResult = (result, id) => {
+  localStorage.setItem(id, result);
 };
 
 
@@ -205,9 +200,10 @@ const renderQuiz = (quiz) => {
 
   main.append(questionBox);
 
+  let result = 0;
   let questionCount = 0;
 
-  const showQustion = () => {
+  const showQuestion = () => {
 
     const data = quiz.list[questionCount];
     questionCount += 1;
@@ -217,7 +213,7 @@ const renderQuiz = (quiz) => {
     const form = document.createElement('form');
     form.classList = 'main__form-question';
     form.dataset.count = `${questionCount}/${quiz.list.length}`;
-    console.log(data);
+
     questionBox.append(form);
 
     const fieldset = document.createElement('fieldset');
@@ -225,42 +221,53 @@ const renderQuiz = (quiz) => {
     legend.className = 'main__subtitle';
     legend.textContent = data.question;
 
-    const answers = createAnswer(data);
+    const answersData = createAnswer(data);
 
     const button = document.createElement('button');
     button.className = 'main__btn question__next';
     button.type = 'submit';
     button.textContent = 'Подтвердить';
 
-    fieldset.append(legend, ...answers);
+    fieldset.append(legend, ...answersData.labels);
 
 
     form.append(fieldset, button);
 
     form.addEventListener('submit', (event) => {
-   
-        event.preventDefault();
-      
+
+      event.preventDefault();
+
 
       let ok = false;
       const answer = [...form.answer].map(input => {
-        if (input.checked) {
-          ok = true;
-          return input.checked ? input.value : false;
-        }
-
-        
-
-        if (ok) {
-          console.log(answer);
-        } else {
-          console.error(' Не выбран ни один элемент')
-        }
+        if (input.checked) ok = true;
+        return input.checked ? input.value : false;
       });
+
+      if (ok) {
+        if (answer.every((result, i) => !!result === answersData.keys[i])) {
+          result += 1;
+        }
+
+        if (questionCount < quiz.list.length) {
+          showQuestion();
+
+        } else {
+          hideElem(questionBox);
+          showResult(result, quiz);
+          saveResult(result, quiz.id);
+        }
+      } else {
+        form.classList.add('main__form-question_error');
+        setTimeout(() => {
+          form.classList.remove('main__form-question_error');
+        }, 1000)
+      }
+
     })
   };
 
-  showQustion();
+  showQuestion();
 
 };
 
@@ -277,8 +284,9 @@ const addClick = (buttons, data) => {
 };
 
 
-const initQuiz = () => {
-  const data = getData();
+const initQuiz = async () => {
+  const data = await getData();
+
 
   const buttons = renderTheme(data);
 
