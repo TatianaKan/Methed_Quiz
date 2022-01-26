@@ -23,7 +23,7 @@ const showElem = elem => {
     }
   }
   requestAnimationFrame(animation)
-}
+};
 
 const hideElem = (elem, cb) => {
   let opacity = getComputedStyle(elem).getPropertyValue('opacity');
@@ -44,7 +44,6 @@ const hideElem = (elem, cb) => {
 };
 
 const loadResult = id => localStorage.getItem(id);
-
 
 const renderTheme = (themes) => {
   const list = document.querySelector('.selection__list');
@@ -74,12 +73,8 @@ const renderTheme = (themes) => {
       li.append(p)
     }
 
-
-
     list.append(li);
-
     buttons.push(button);
-
     // list.innerHTML += `
     // <li class="selection__item">
     //       <button class="selection__theme">
@@ -87,7 +82,6 @@ const renderTheme = (themes) => {
     //       </button>
     //     </li>
     // `
-
   }
   return buttons;
 };
@@ -150,11 +144,9 @@ const showResult = (result, quiz) => {
   const percent = result / quiz.list.length * 100;
   let ratio = 0;
 
-
   for (let i = 0; i < quiz.result.length; i++) {
     if (percent >= quiz.result[i][0]) {
       ratio = i;
-
     }
   }
 
@@ -171,19 +163,21 @@ const showResult = (result, quiz) => {
   button.textContent = 'К списку квизов';
 
   block.append(button);
+
+
   main.append(block);
+  showElem(block);
 
   button.addEventListener('click', () => {
     // //location.reload();///перегрузит страницу
 
-    hideElem(block, ()=> {
-      showElem(title);
-      showElem(selection);
-      console.log('kjh');
-    })
+    // hideElem(block, () => { ///перейти к темам
+    //   showElem(title);
+    //   showElem(selection);
+    // })
+
+    hideElem(block, initQuiz);
   })
-
-
 };
 
 const saveResult = (result, id) => {
@@ -192,19 +186,22 @@ const saveResult = (result, id) => {
 
 
 const renderQuiz = (quiz) => {
-  hideElem(title);
-  hideElem(selection);
+  // hideElem(title);
+  // hideElem(selection);
 
   const questionBox = document.createElement('div');
   questionBox.className = 'main__box main__box__question';
 
-  main.append(questionBox);
+  hideElem(title);
+  hideElem(selection, () => {
+    main.append(questionBox);
+    showElem(questionBox);
+  });
 
   let result = 0;
   let questionCount = 0;
 
   const showQuestion = () => {
-
     const data = quiz.list[questionCount];
     questionCount += 1;
 
@@ -229,14 +226,14 @@ const renderQuiz = (quiz) => {
     button.textContent = 'Подтвердить';
 
     fieldset.append(legend, ...answersData.labels);
-
-
     form.append(fieldset, button);
+
+    questionBox.append(form);
+    showElem(form);
 
     form.addEventListener('submit', (event) => {
 
       event.preventDefault();
-
 
       let ok = false;
       const answer = [...form.answer].map(input => {
@@ -253,9 +250,10 @@ const renderQuiz = (quiz) => {
           showQuestion();
 
         } else {
-          hideElem(questionBox);
-          showResult(result, quiz);
           saveResult(result, quiz.id);
+          hideElem(questionBox, () => {
+            showResult(result, quiz);
+          });
         }
       } else {
         form.classList.add('main__form-question_error');
@@ -263,7 +261,6 @@ const renderQuiz = (quiz) => {
           form.classList.remove('main__form-question_error');
         }, 1000)
       }
-
     })
   };
 
@@ -271,22 +268,23 @@ const renderQuiz = (quiz) => {
 
 };
 
-
-
 const addClick = (buttons, data) => {
   buttons.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const quiz = data.find(item =>
-        item.id === btn.dataset.id);
-      renderQuiz(quiz);
-    });
+    btn.addEventListener('click',
+      () => {
+        const quiz = data.find(item =>
+          item.id === btn.dataset.id);
+        renderQuiz(quiz);
+      });
   });
 };
 
-
 const initQuiz = async () => {
-  const data = await getData();
 
+  showElem(title);
+  showElem(selection);
+
+  const data = await getData();
 
   const buttons = renderTheme(data);
 

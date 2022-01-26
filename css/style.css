@@ -200,12 +200,14 @@ button {
 }
 
 .main__box__question {
+  opacity: 0;
   padding: 60px 120px;
   height: auto;
   min-height: 540px;
 }
 
 .main__form-question {
+  opacity: 0;
   position: relative;
 }
 
@@ -336,6 +338,7 @@ button {
 }
 
 .main__box__result {
+  opacity: 0;
   padding: 60px;
   display: flex;
   flex-direction: column;
